@@ -29,6 +29,16 @@ celerybeat.pid
 pip-log.txt
 pip-delete-this-directory.txt
 
+
+
+# --- React / Frontend (Crucial to add this!) ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/npm-debug.log*
+
+
 # OS / IDEs
 .vscode/
 .idea/
