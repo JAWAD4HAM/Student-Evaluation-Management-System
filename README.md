@@ -1,2 +1,2 @@
-# Student-Evaluation-Management-System
-A system for managing student assessments, grades, and performance tracking.
+# Doctor-Appointment-System
+A healthcare booking platform for patients to schedule appointments.
