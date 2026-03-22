@@ -1,0 +1,37 @@
+# Python / Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django specifics
+db.sqlite3
+db.sqlite3-journal
+/static/
+/staticfiles/
+/media/
+local_settings.py
+.env
+*.env
+
+# Celery (if you add background tasks later)
+celerybeat-schedule
+celerybeat.pid
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS / IDEs
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
