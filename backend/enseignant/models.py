@@ -1,21 +1,22 @@
 from django.db import models
-import filliere.models from Filliere
-# Create your models here.
 
-class Groupe(models.Model):
+class Enseignant(models.Model):
+       
+      id_enseignant = models.CharField(max_length=50 , unique=True)
+      nom = models.CharField(max_length=50)
+      prenom = models.CharField(max_length=50)
+      email = models.EmailField()
+      ENSEIGNANT_STATUT = [
 
-    id_groupe = models.CharField(max_length=50, unique=True)
-    nom = models.CharField(max_length=50)
-    
-    filliere = models.ForeignKey(
-    Filliere,
-    on_delete=models.CASCADE,
-    related_name="groupes"
-    )
+            "A","Active",
+            "I","Inactive"
 
-    class Meta:
-        ordering=["nom"]
+      ]
+      enseignant_statut = models.CharField(max_length=1,choices=ENSEIGNANT_STATUT,default="A")
 
 
-    def __str__ (self):
-        return f"{self.nom}"
+      class Meta:
+        ordering = ["nom", "prenom"]
+
+      def __str__(self):
+          return f"{self.nom} {self.prenom}"
