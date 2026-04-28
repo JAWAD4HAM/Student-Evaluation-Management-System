@@ -1,2 +1,2 @@
-# Doctor-Appointment-System
-A healthcare booking platform for patients to schedule appointments.
+# Student Evaluation Management System
+A system for generate student forms.
