@@ -26,7 +26,11 @@ import {
   Routes,
   useNavigate,
   useParams,
+  useSearchParams,
 } from 'react-router-dom'
+import ecoleLogo from './assets/ecole.png'
+import evalgenLogo from './assets/evalgen-logo.png'
+import ministreLogo from './assets/ministre.png'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/'
@@ -237,9 +241,8 @@ function LoginPage({ saveToken }) {
     <main className="login-shell">
       <section className="login-panel">
         <div>
-          <span className="app-mark">FE</span>
+          <img className="app-logo login-logo" src={evalgenLogo} alt="EvalGen" />
           <h1>Connexion administrateur</h1>
-          <p>Gestion automatique des fiches d'évaluation des élèves.</p>
         </div>
         <Notice message={error} type="error" onClose={() => setError('')} />
         <form className="stack-form" onSubmit={submit}>
@@ -283,11 +286,7 @@ function AppLayout({ clearToken }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="app-mark">FE</span>
-          <div>
-            <strong>Fiches Évaluation</strong>
-            <small>Administration</small>
-          </div>
+          <img className="app-logo sidebar-logo" src={evalgenLogo} alt="EvalGen" />
         </div>
         <nav className="nav-list">
           {navItems.map((item) => {
@@ -315,6 +314,7 @@ function AppLayout({ clearToken }) {
           <Route path="/enseignants" element={<EnseignantsPage />} />
           <Route path="/evaluations" element={<EvaluationsPage />} />
           <Route path="/fiches" element={<FichesPage />} />
+          <Route path="/fiches/impression" element={<FicheCollectionPage />} />
           <Route path="/fiches/:id" element={<FicheDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -1379,6 +1379,7 @@ function EnseignantsPage() {
 }
 
 function EvaluationsPage() {
+  const navigate = useNavigate()
   const [evaluations, setEvaluations] = useState([])
   const [catalog, setCatalog] = useState({
     filieres: [],
@@ -1486,6 +1487,10 @@ function EvaluationsPage() {
         type: 'success',
         message: `${response.data.created} fiche(s) créée(s), ${response.data.skipped} déjà existante(s).`,
       })
+      const ficheIds = response.data.fiches.map((fiche) => fiche.id)
+      if (ficheIds.length) {
+        navigate(`/fiches/impression?ids=${ficheIds.join(',')}`)
+      }
     } catch (err) {
       setNotice({ type: 'error', message: formatError(err) })
     }
@@ -1677,6 +1682,7 @@ function EvaluationsPage() {
 }
 
 function FichesPage() {
+  const navigate = useNavigate()
   const [fiches, setFiches] = useState([])
   const [evaluations, setEvaluations] = useState([])
   const [groupes, setGroupes] = useState([])
@@ -1787,6 +1793,10 @@ function FichesPage() {
         message: `${response.data.created} fiche(s) créée(s), ${response.data.skipped} déjà existante(s).`,
       })
       await load()
+      const ficheIds = response.data.fiches.map((fiche) => fiche.id)
+      if (ficheIds.length) {
+        navigate(`/fiches/impression?ids=${ficheIds.join(',')}`)
+      }
     } catch (err) {
       setNotice({ type: 'error', message: formatError(err) })
     }
@@ -1953,6 +1963,150 @@ function FichesPage() {
   )
 }
 
+function FichePaper({ fiche }) {
+  return (
+    <article className="fiche-paper">
+      <header className="fiche-header">
+        <div className="logo-box">
+          <img src={ministreLogo} alt="Ministère" />
+        </div>
+        <div className="logo-box">
+          <img src={ecoleLogo} alt="École" />
+        </div>
+      </header>
+      <section className="fiche-title">
+        <strong>{fiche.evaluation_titre}</strong>
+      </section>
+      <section className="fiche-session">Session: 2025/2026</section>
+      <section className="fiche-grid">
+        <div>
+          <p>
+            <strong>Filiere:</strong> {fiche.filiere_nom}
+          </p>
+          <p>
+            <strong>Module:</strong> {fiche.module_nom}
+          </p>
+          <p>
+            <strong>Cours:</strong> {fiche.cours_nom}
+          </p>
+        </div>
+        <div>
+          <p>
+            <strong>Groupe:</strong> {fiche.groupe_nom}
+          </p>
+          <p>
+            <strong>Date:</strong> {formatDate(fiche.evaluation_date)}
+          </p>
+          <p>
+            <strong>Type d'evaluation:</strong> {fiche.evaluation_type}
+          </p>
+        </div>
+      </section>
+      <section className="fiche-person">
+        <p>
+          <strong>Enseignant:</strong> {fiche.enseignant_nom}
+        </p>
+      </section>
+      <section className="fiche-student">
+        <p>
+          <strong>Nom d'étudiant :</strong> {fiche.eleve_nom} {fiche.eleve_prenom}
+        </p>
+        <p>
+          <strong>Code national de l'étudiant :</strong> {fiche.eleve_id_national}
+        </p>
+      </section>
+      <footer className="fiche-footer">
+        <p>
+          <strong>Note :</strong> _________ / 20
+        </p>
+        <div className="signatures">
+          <span>
+            <strong>Signature Enseignant:</strong>
+          </span>
+          <span>
+            <strong>Signature Élève:</strong>
+          </span>
+        </div>
+        <div className="signatures lines">
+          <span>____________________</span>
+          <span>____________________</span>
+        </div>
+      </footer>
+    </article>
+  )
+}
+
+function FicheCollectionPage() {
+  const [searchParams] = useSearchParams()
+  const [fiches, setFiches] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const ids = useMemo(
+    () =>
+      (searchParams.get('ids') || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    [searchParams],
+  )
+
+  useEffect(() => {
+    let active = true
+    async function load() {
+      if (!ids.length) {
+        setError('Aucune fiche sélectionnée pour l’impression.')
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      try {
+        const responses = await Promise.all(ids.map((id) => api.get(`fiches/${id}/`)))
+        if (active) setFiches(responses.map((response) => response.data))
+      } catch (err) {
+        if (active) setError(formatError(err))
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      active = false
+    }
+  }, [ids])
+
+  if (loading) return <Loading />
+  if (error) return <Notice message={error} type="error" />
+  if (!fiches.length) return <EmptyState>Aucune fiche à imprimer.</EmptyState>
+
+  return (
+    <section>
+      <PageHeader
+        title="Fiches générées"
+        description={`${fiches.length} fiche(s) dans ce document.`}
+        action={
+          <div className="actions">
+            <button className="primary-btn" type="button" onClick={() => window.print()}>
+              <Printer size={16} />
+              Imprimer
+            </button>
+            <Link className="secondary-btn" to="/fiches">
+              Retour
+            </Link>
+          </div>
+        }
+      />
+      <div className="print-area collection-print-area">
+        {fiches.map((fiche) => (
+          <FichePaper key={fiche.id} fiche={fiche} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function FicheDetailPage() {
   const { id } = useParams()
   const [fiche, setFiche] = useState(null)
@@ -2000,74 +2154,7 @@ function FicheDetailPage() {
         }
       />
       <div className="print-area">
-        <article className="fiche-paper">
-          <header className="fiche-row fiche-header">
-            <div className="logo-box">Logo ministère</div>
-            <div className="fiche-heading">
-              <strong>ROYAUME DU MAROC</strong>
-              <span>Ministère de l'Éducation</span>
-              <span>Nom de université</span>
-              <span>Nom Établissement</span>
-            </div>
-            <div className="logo-box">Logo école</div>
-          </header>
-          <section className="fiche-session">Session: 2025/2026</section>
-          <section className="fiche-grid">
-            <div>
-              <p>
-                <strong>Filière:</strong> {fiche.filiere_nom}
-              </p>
-              <p>
-                <strong>Module:</strong> {fiche.module_nom}
-              </p>
-              <p>
-                <strong>Cours:</strong> {fiche.cours_nom}
-              </p>
-              <p>
-                <strong>Enseignant:</strong> {fiche.enseignant_nom}
-              </p>
-            </div>
-            <div>
-              <p>
-                <strong>Groupe:</strong> {fiche.groupe_nom}
-              </p>
-              <p>
-                <strong>Date:</strong> {formatDate(fiche.evaluation_date)}
-              </p>
-              <p>
-                <strong>TypeEvaluation:</strong> {fiche.evaluation_type}
-              </p>
-              <p>
-                <strong>Génération:</strong> {formatDate(fiche.date_generation)}
-              </p>
-            </div>
-          </section>
-          <section className="fiche-student">
-            <p>
-              <strong>Élève: Nom & Prénom :</strong> {fiche.eleve_nom} {fiche.eleve_prenom}
-            </p>
-            <p>
-              <strong>CNE:</strong> {fiche.eleve_id_national} | <strong>Code:</strong>{' '}
-              {fiche.eleve_id_eleve}
-            </p>
-          </section>
-          <section className="fiche-title">
-            <strong>Titre de l'évaluation:</strong> {fiche.evaluation_titre}
-          </section>
-          <footer className="fiche-footer">
-            <p>
-              <strong>Note :</strong> _________ / 20
-            </p>
-            <div className="signatures">
-              <span>Signature Enseignant:</span>
-              <span>Signature Élève:</span>
-            </div>
-            <div className="signatures lines">
-              <span>____________________</span>
-              <span>____________________</span>
-            </div>
-          </footer>
-        </article>
+        <FichePaper fiche={fiche} />
       </div>
     </section>
   )
