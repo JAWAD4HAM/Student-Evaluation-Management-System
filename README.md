@@ -125,15 +125,15 @@ python manage.py test
 
 Les tests couvrent la limite de 2 cours par module, la generation avec au moins 2 eleves et l'absence de doublons.
 
-## MySQL optionnel
+## Base de donnees MySQL
 
-SQLite est utilise par defaut pour garder le projet simple. Le driver MySQL `mysqlclient` est deja dans `backend/requirements.txt`. Pour utiliser MySQL, lancer les commandes avec ces variables:
+Le backend utilise MySQL. Le driver `mysqlclient` est deja dans `backend/requirements.txt`.
+Les valeurs par defaut pointent vers la base locale `FicheEval_db` avec l'utilisateur `jawad` et le mot de passe `0000`. Si votre configuration est differente, ajuster ces variables:
 
 ```bash
-export DB_ENGINE=mysql
 export DB_NAME=FicheEval_db
-export DB_USER=root
-export DB_PASSWORD=
+export DB_USER=jawad
+export DB_PASSWORD=0000
 export DB_HOST=127.0.0.1
 export DB_PORT=3306
 python manage.py migrate
